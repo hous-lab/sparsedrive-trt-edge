@@ -48,6 +48,7 @@ docs/        environment, pipeline guide, profiling, lessons
 ```bash
 conda activate sparsedrive      # torch 2.0.1+cu118, TRT 10.4.0.26, mmcv 1.7.1
 bash run_pipeline.sh             # 8 steps, idempotent; see docs/pipeline_guide.md
+SD_BUILD_INT8=1 bash run_pipeline.sh   # adds the INT8 tier (docs/model_variants.md §4.5)
 ```
 
 For Orin: `scripts/sync_to_orin.sh`, then on the device

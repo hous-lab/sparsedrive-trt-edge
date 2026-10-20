@@ -102,3 +102,86 @@ Folding has its own traps (each cost a debugging round-trip):
    directly (traj_cls, not If_output_0); renaming the spliced Squeeze's
    output to the If's output name keeps consumers, graph outputs, and every
    downstream eval script (which index outputs by name) unchanged.
+
+## 7.10 nvpmodel boot mode reads the status file, not conf DEFAULT
+
+To apply a power mode across a reboot on this AGX Orin, write
+/var/lib/nvpmodel/status (e.g. `pmode:0003`) AND reboot
+(`sudo systemctl reboot -i`). Setting /etc/nvpmodel.conf DEFAULT or
+running `nvpmodel -m` at runtime does not survive the boot-time apply,
+and `nvpmodel -m` itself refuses while a CUDA golden context exists.
+
+Mode IDs come from THIS board's /etc/nvpmodel.conf: 0=MAXN, 1=MODE_15W,
+2=MODE_30W, 3=MODE_50W. Stock tables differ per board (AGX Orin stock maps
+4=MAXN); always read the table from the box's conf.
+
+## 7.11 RTC is stuck; verify reboots via /proc/uptime
+
+The on-board RTC is dead: `uptime -s` always prints 2026-08-12
+13:32 regardless of reboots. Use `cat /proc/uptime` (seconds since boot)
+to verify a reboot landed (e.g. 96 s right after boot).
+
+## 7.12 pgrep -f self-match via the launch line
+
+A pgrep -f guard placed in the same ssh command line as the launch it
+guards will self-match: the remote bash cmdline contains the full string,
+including the plain-text launch path. The `[a]rm64` bracket trick only
+protects the PATTERN occurrence, not other occurrences of the same text
+in the same cmdline. If each sweep step reboots first, the guard is
+redundant anyway - drop it.
+
+## 7.13 INT8 calib npz convention
+
+Calibration data is a stacked npz: d[k][i] = input k of frame i. Storage
+is float16 (the calibrators astype float32 per batch); uncompressed
+np.savez - compressed writes of multi-GB float32 arrays run at ~5 MB/s.
+Backbone calib holds imgs [64,6,3,384,704] f32 (raw image bytes compress
+well, so it uses savez_compressed); head calib holds feat_0..3
+[64,6,256,h,w] f16 + projection_mat + image_wh, NO feat_flat (the motion
+engine stays FP16 in this tier).
+
+## 7.14 15W Myelin context-creation failure
+
+Under MODE_15W (2 CPU cores, low clocks) the Map FP16 engine's
+create_execution_context() failed with "Myelin cask_fusion unknown internal
+error" once; the first bench crashed on ctx.set_input_shape with a None
+context while BB/Head had already been measured. The retry in
+bench_engines.py does NOT clear it - on the re-run Map still failed (it is
+deterministic on this board at 15W). bench_engines.py isolates per-engine
+failures into a "failed" list in bench_results.json instead of dying, so
+one engine cannot void the whole mode's data. Treat 15W Map latency as
+unavailable on this board and report the 3-engine sum.
+
+## 7.15 lvl_start / feat_flat feed contract (motion engine)
+
+The motion ONNX declares lvl_start as [4] (per-cam level start offsets,
+cumsum of per-cam h*w) and feat_flat as (1, n_cam, sum_hw, 256). Early
+scripts fed the cumsum's 5-element version and a 3-D (1, 6*sum_hw, 256)
+cat - both feed the same bytes as the 4-D view, so outputs were always
+correct, but TRT rejects setInputShape on the nbDims mismatch and prints
+an error per call. Fixed by slicing [:-1] on lvl_start and viewing the
+cat output as (1, n_cam, sum_hw, 256) (metadata-only reshape, memory
+untouched). Rule: match the ONNX tensor declarations exactly even when
+the byte counts coincide - the error spam hides real errors.
+
+## 7.16 Any head engine build must parse sparsedrive_head_sim.onnx
+
+build_head_int8_orin.py defaulted to the UNFOLDED sparsedrive_head.onnx;
+TRT fails it at parse with IIfConditionalOutputLayer shape conflict
+([1,900,13,3] vs [1,900,13,3,1]) in /det_head/layers.7/kps_generator/If.
+The FP16 builder already used the If-folded *_sim.onnx - all head engine
+builds (FP16 or INT8) must parse sparsedrive_head_sim.onnx. Rule: an
+INT8 variant of an existing builder inherits the builder's onnx source,
+not the raw export.
+
+## 7.17 One gate policy, one table, both platforms
+
+x86 (tools/compare_npz_gates.py GATE_OVERRIDES) and Orin
+(arm64/eval/eval_accuracy_orin.py GATES) drifted apart: the Orin table
+gated mp_lon_anchor at 0.99 (measured 0.9742 on pure FP16 - unmeetable),
+bb_feat at 0.9999 (INT8 backbone lands ~0.98 by design - unmeetable).
+Result: an INT8 run that is bit-consistent with x86 reported GATES PASS:
+False. The x86 table is the source of truth; the Orin table now mirrors
+it (mp_lon_anchor 0.95, bb_feat 0.98, hd_det_quality 0.98, mp_traj_cls
+0.95; reg/instance_feature/map_* 0.99). Before editing either table,
+check the other.

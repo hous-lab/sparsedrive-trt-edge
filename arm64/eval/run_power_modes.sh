@@ -10,7 +10,7 @@
 set -e
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 OUT_ROOT="$REPO/arm64/eval/results/power"
-MODES="${MODES:-MAXN:0 50W:1 30W:2 15W:3}"
+MODES="MAXN:0 50W:3 30W:2 15W:1"
 
 for m in $MODES; do
   name="${m%%:*}"; id="${m##*:}"

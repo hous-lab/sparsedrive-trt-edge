@@ -37,8 +37,15 @@ def load_engine(path, plugin=None):
         return trt.Runtime(TRT_LOGGER).deserialize_cuda_engine(f.read())
 
 
-def bench(eng, feeds, warmup_sec=3, iters=200):
+def bench(eng, feeds, x86=0, warmup_sec=3, iters=200):
     ctx = eng.create_execution_context()
+    if ctx is None:
+        # 15W caps have been seen to fail Myelin context creation (cask_fusion
+        # internal error) transiently; one retry usually clears it.
+        time.sleep(2)
+        ctx = eng.create_execution_context()
+    if ctx is None:
+        raise RuntimeError('execution context creation failed (Myelin/cask), see docs/lessons.md 7.14')
     s = torch.cuda.Stream()
     for i in range(eng.num_io_tensors):
         name = eng.get_tensor_name(i)
@@ -73,9 +80,10 @@ def motion_feeds():
     """Random feeds matching sparsedrive_motion_plan.onnx I/O (latency only)."""
     d = torch.device('cuda')
     return {
-        'feat_flat': torch.randn(1, N_TOKENS, 256, device=d) * 0.1,
+        'feat_flat': torch.randn(1, 6, N_TOKENS, 256, device=d) * 0.1,
         'spat_shape': torch.tensor([[h, w] for h, w in FEAT_SHAPES], device=d, dtype=torch.int32),
-        'lvl_start': torch.tensor(np.cumsum([0] + LEVEL_SIZES), device=d, dtype=torch.int32),
+        # lvl_start is [num_levels]=4 - drop the cumsum trailing sentinel.
+        'lvl_start': torch.tensor(np.cumsum([0] + LEVEL_SIZES)[:-1], device=d, dtype=torch.int32),
         'det_cls': torch.randn(1, 900, 9, device=d),
         'det_reg': torch.randn(1, 900, 11, device=d),
         'det_quality': torch.randn(1, 900, 2, device=d),
@@ -111,6 +119,13 @@ def main():
           "feat_3": torch.randn(6, 256, 12, 22, device="cuda"),
           "projection_mat": torch.eye(4, device="cuda").unsqueeze(0).expand(6, -1, -1),
           "image_wh": torch.tensor([[704, 384]], device="cuda").float().expand(6, -1)}),
+        ("Head_INT8", os.path.join(ENGINE_INT8_DIR, "head_int8.engine"), PLUGIN,
+         {"feat_0": torch.randn(6, 256, 96, 176, device="cuda"),
+          "feat_1": torch.randn(6, 256, 48, 88, device="cuda"),
+          "feat_2": torch.randn(6, 256, 24, 44, device="cuda"),
+          "feat_3": torch.randn(6, 256, 12, 22, device="cuda"),
+          "projection_mat": torch.eye(4, device="cuda").unsqueeze(0).expand(6, -1, -1),
+          "image_wh": torch.tensor([[704, 384]], device="cuda").float().expand(6, -1)}),
         ("Map_FP16", os.path.join(ENGINE_FP16_DIR, "map_fp16.engine"), PLUGIN,
          {"feat_0": torch.randn(6, 256, 96, 176, device="cuda"),
           "feat_1": torch.randn(6, 256, 48, 88, device="cuda"),
@@ -123,13 +138,21 @@ def main():
     ]
     results = []
     missing = []
+    failed = []
     for name, path, plugin, feeds in tables:
         if not os.path.exists(path):
             missing.append({"name": name, "path": path})
             print(f"[skip] {name}: engine not found: {path}")
             continue
         eng = load_engine(path, plugin)
-        ms, fps = bench(eng, feeds)
+        try:
+            ms, fps = bench(eng, feeds)
+        except Exception as e:
+            failed.append({"name": name, "path": path, "error": str(e)[:200]})
+            print(f"[fail] {name}: {e}")
+            del eng
+            torch.cuda.empty_cache()
+            continue
         results.append({"name": name, "ms": round(ms, 1), "fps": round(1000.0 / ms, 1)})
         print(f"{name}: {ms:.1f} ms ({1000.0/ms:.1f} FPS)")
         del eng
@@ -147,7 +170,7 @@ def main():
     out = os.path.join(OUT_DIR, "bench_results.json")
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(out, "w") as f:
-        json.dump({"engines": results, "missing": missing}, f, indent=2)
+        json.dump({"engines": results, "missing": missing, "failed": failed}, f, indent=2)
     print(f"Saved: {out}")
 
 

@@ -8,10 +8,10 @@
 | 2 | plugin build (`plugins/build_x86.sh`) | `plugins/build/libplugins.so` exists |
 | 3 | ONNX export (backbone/head/map/motion_plan) | per-model ONNX exists |
 | 4 | FP16 engine build | per-engine file exists |
-| 5 | INT8 (optional, `SD_BUILD_INT8=1`) | off by default |
-| 6 | `tools/gen_demo_data.py` + `tools/gen_x86_reference.py` | demo npz exists; ref always regenerated |
+| 5 | `tools/gen_demo_data.py` + `tools/gen_x86_reference.py` | demo npz exists; ref always regenerated |
+| 6 | INT8 tier (optional, `SD_BUILD_INT8=1` -> `x86/trt_compile/int8/scripts/run_build_int8_x86.sh`: calib -> engines -> INT8 cascade gates + bench) | off by default |
 | 7 | `x86/eval/eval_motion_v2_x86.py` gates | always runs |
- | 8 | `x86/eval/render_outputs.py` renders | always runs |
+| 8 | `x86/eval/render_outputs.py` renders | always runs |
 
 ## 2.2 Sub-model I/O
 
@@ -27,7 +27,7 @@ map_reg zeros bridge [1,100,2] (see docs/lessons.md).
 
 ## 2.3 motion engine (22 in / 5 out)
 
-Inputs: feat_flat [1,134640,256], spat_shape [4,2] i32, lvl_start [5] i32,
+Inputs: feat_flat [1,134640,256], spat_shape [4,2] i32, lvl_start [4] i32,
 det_cls/reg/quality/instance_feat/anchor_embed (det bridge),
 map_cls/reg/instance_feature/anchor_embed (map bridge, map_reg zeros),
 projection_mat [6,4,4], image_wh [6,2], timestamp [1], ego_status [10],

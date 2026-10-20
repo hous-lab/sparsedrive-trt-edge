@@ -1,0 +1,330 @@
+{
+  "reference": "/home/hous/sparsedrive-trt-edge/data/x86_reference.npz",
+  "configs": {
+    "fp16": {
+      "config": "Config 1: All FP16",
+      "engines": {
+        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/backbone_fp16.engine",
+        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/head_fp16.engine",
+        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+      },
+      "results": {
+        "bb_feat_0": {
+          "cos_sim": 0.9999716486666185,
+          "mse": 0.006412869784981012,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_1": {
+          "cos_sim": 0.9999683617384878,
+          "mse": 0.005337564740329981,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_2": {
+          "cos_sim": 0.9999652689962857,
+          "mse": 0.0041023981757462025,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_3": {
+          "cos_sim": 0.9999728445660696,
+          "mse": 0.0030426618177443743,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_det_cls": {
+          "cos_sim": 0.9999968011976316,
+          "mse": 0.00022001478646416217,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_reg": {
+          "cos_sim": 0.9999989963629308,
+          "mse": 0.00019483990035951138,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_quality": {
+          "cos_sim": 0.9998964134530308,
+          "mse": 0.0002414217306068167,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_instance_feature": {
+          "cos_sim": 0.9999330576671556,
+          "mse": 6.0449416196206585e-05,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_cls": {
+          "cos_sim": 0.9999990601167106,
+          "mse": 7.362922769971192e-05,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_instance_feat": {
+          "cos_sim": 0.999978149401174,
+          "mse": 1.7884522094391286e-05,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_anchor_embed": {
+          "cos_sim": 0.9999670102033675,
+          "mse": 2.266250885440968e-05,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_motion_cls": {
+          "cos_sim": 0.998696726820649,
+          "mse": 0.015607833862304688,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_motion_traj": {
+          "cos_sim": 0.9970949270350444,
+          "mse": 0.0025738177355378866,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_traj_cls": {
+          "cos_sim": 0.9998459588541966,
+          "mse": 0.0041603632271289825,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_lat_anchor": {
+          "cos_sim": 0.9988270008913602,
+          "mse": 0.09620264917612076,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_lon_anchor": {
+          "cos_sim": 0.9742313002153924,
+          "mse": 1.0710840225219727,
+          "status": "OK",
+          "gate": 0.95
+        }
+      },
+      "gates_pass": true
+    },
+    "bb_int8": {
+      "config": "Config 2: BB INT8 + rest FP16",
+      "engines": {
+        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine",
+        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/head_fp16.engine",
+        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+      },
+      "results": {
+        "bb_feat_0": {
+          "cos_sim": 0.9892105178656044,
+          "mse": 4.934404373168945,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_1": {
+          "cos_sim": 0.984115455644884,
+          "mse": 4.111226558685303,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_2": {
+          "cos_sim": 0.9807117678419823,
+          "mse": 3.260807514190674,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_3": {
+          "cos_sim": 0.9824015643492273,
+          "mse": 2.601881742477417,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_det_cls": {
+          "cos_sim": 0.9997918171437689,
+          "mse": 0.017057443037629128,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_reg": {
+          "cos_sim": 0.9998570069278139,
+          "mse": 0.03263987973332405,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_quality": {
+          "cos_sim": 0.9863347345584998,
+          "mse": 0.03155369311571121,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_instance_feature": {
+          "cos_sim": 0.9946556805021667,
+          "mse": 0.005136766470968723,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_cls": {
+          "cos_sim": 0.9999120125931845,
+          "mse": 0.005593843758106232,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_instance_feat": {
+          "cos_sim": 0.9990417974891623,
+          "mse": 0.0007958593778312206,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_anchor_embed": {
+          "cos_sim": 0.9978805392856192,
+          "mse": 0.001459681079722941,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_motion_cls": {
+          "cos_sim": 0.978486628009619,
+          "mse": 0.2604348957538605,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_motion_traj": {
+          "cos_sim": 0.961489300817577,
+          "mse": 0.03410539776086807,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_traj_cls": {
+          "cos_sim": 0.9978592673651487,
+          "mse": 0.05880879983305931,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_lat_anchor": {
+          "cos_sim": 0.99788985990016,
+          "mse": 0.17297320067882538,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_lon_anchor": {
+          "cos_sim": 0.963533612023231,
+          "mse": 1.5157318115234375,
+          "status": "OK",
+          "gate": 0.95
+        }
+      },
+      "gates_pass": true
+    },
+    "bb_head_int8": {
+      "config": "Config 3: BB+Head INT8 + rest FP16",
+      "engines": {
+        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine",
+        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/head_int8.engine",
+        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+      },
+      "results": {
+        "bb_feat_0": {
+          "cos_sim": 0.9892105178656044,
+          "mse": 4.934404373168945,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_1": {
+          "cos_sim": 0.984115455644884,
+          "mse": 4.111226558685303,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_2": {
+          "cos_sim": 0.9807117678419823,
+          "mse": 3.260807514190674,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "bb_feat_3": {
+          "cos_sim": 0.9824015643492273,
+          "mse": 2.601881742477417,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_det_cls": {
+          "cos_sim": 0.9997906568210453,
+          "mse": 0.017155751585960388,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_reg": {
+          "cos_sim": 0.9998573359237833,
+          "mse": 0.03255229815840721,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "hd_det_quality": {
+          "cos_sim": 0.9862701136047396,
+          "mse": 0.031699288636446,
+          "status": "OK",
+          "gate": 0.98
+        },
+        "hd_instance_feature": {
+          "cos_sim": 0.9946166098954993,
+          "mse": 0.005174392368644476,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_cls": {
+          "cos_sim": 0.9999120125931845,
+          "mse": 0.005593843758106232,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_instance_feat": {
+          "cos_sim": 0.9990417974891623,
+          "mse": 0.0007958593778312206,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "map_anchor_embed": {
+          "cos_sim": 0.9978805392856192,
+          "mse": 0.001459681079722941,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_motion_cls": {
+          "cos_sim": 0.9785355477680372,
+          "mse": 0.2598997950553894,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_motion_traj": {
+          "cos_sim": 0.9614533309019327,
+          "mse": 0.03411192446947098,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_traj_cls": {
+          "cos_sim": 0.9978622151182551,
+          "mse": 0.05871287360787392,
+          "status": "OK",
+          "gate": 0.95
+        },
+        "mp_lat_anchor": {
+          "cos_sim": 0.9981263496770405,
+          "mse": 0.15357735753059387,
+          "status": "OK",
+          "gate": 0.99
+        },
+        "mp_lon_anchor": {
+          "cos_sim": 0.963533612023231,
+          "mse": 1.5157318115234375,
+          "status": "OK",
+          "gate": 0.95
+        }
+      },
+      "gates_pass": true
+    }
+  },
+  "gates_pass": true
+}

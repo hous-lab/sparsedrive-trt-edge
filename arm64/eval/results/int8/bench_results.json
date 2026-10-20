@@ -1,0 +1,36 @@
+{
+  "engines": [
+    {
+      "name": "BB_FP16",
+      "ms": 66.5,
+      "fps": 15.0
+    },
+    {
+      "name": "BB_INT8",
+      "ms": 39.4,
+      "fps": 25.4
+    },
+    {
+      "name": "Head_FP16",
+      "ms": 52.4,
+      "fps": 19.1
+    },
+    {
+      "name": "Head_INT8",
+      "ms": 53.1,
+      "fps": 18.8
+    },
+    {
+      "name": "Map_FP16",
+      "ms": 87.7,
+      "fps": 11.4
+    },
+    {
+      "name": "Motion_FP16",
+      "ms": 64.6,
+      "fps": 15.5
+    }
+  ],
+  "missing": [],
+  "failed": []
+}

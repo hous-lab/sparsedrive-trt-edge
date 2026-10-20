@@ -65,21 +65,20 @@ O=x86/trt_compile/fp16/output
   --onnx onnx_export/output/sparsedrive_motion_plan_sim.onnx \
   --engine $O/motion_plan_fp16.engine \
   --plugin $P
-echo "===== [5/8] INT8 engines (optional) ====="
-if [ "${SD_BUILD_INT8:-0}" = "1" ]; then
-  python x86/trt_compile/int8/scripts/build_backbone_int8.py
-  python x86/trt_compile/int8/scripts/build_head_int8.py
-else
-  echo "skip (set SD_BUILD_INT8=1 to build; calib data required)"
-fi
-
-echo "===== [6/8] demo data + x86 reference ====="
+echo "===== [5/8] demo data + x86 reference ====="
 if [ ! -f data/demo_data/sample0.npz ]; then
   python tools/gen_demo_data.py
 else
   echo "skip demo data (exists)"
 fi
 python tools/gen_x86_reference.py
+
+echo "===== [6/8] INT8 tier (optional) ====="
+if [ "${SD_BUILD_INT8:-0}" = "1" ]; then
+  bash x86/trt_compile/int8/scripts/run_build_int8_x86.sh
+else
+  echo "skip (set SD_BUILD_INT8=1 for the full INT8 chain)"
+fi
 
 echo "===== [7/8] accuracy gates (PT vs engine cascade) ====="
 python x86/eval/eval_motion_v2_x86.py

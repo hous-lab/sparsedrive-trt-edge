@@ -1,0 +1,30 @@
+{
+  "engines": [
+    {
+      "name": "BB_FP16",
+      "ms": 32.8,
+      "fps": 30.5
+    },
+    {
+      "name": "Head_FP16",
+      "ms": 24.8,
+      "fps": 40.4
+    },
+    {
+      "name": "Map_FP16",
+      "ms": 38.6,
+      "fps": 25.9
+    },
+    {
+      "name": "Motion_FP16",
+      "ms": 28.7,
+      "fps": 34.8
+    }
+  ],
+  "missing": [
+    {
+      "name": "BB_INT8",
+      "path": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine"
+    }
+  ]
+}

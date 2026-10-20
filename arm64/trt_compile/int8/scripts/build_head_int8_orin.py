@@ -21,9 +21,8 @@ class HeadRealCalibrator(trt.IInt8EntropyCalibrator2):
     def __init__(self, calib_path, batch_size=1):
         super().__init__()
         self.batch_size = batch_size
-        self.calib_data = np.load(calib_path, mmap_mode='r')
-        self.frames = self.calib_data['frames']
-        self.num_frames = len(self.frames)
+        self.d = np.load(calib_path)
+        self.num_frames = self.d['feat_0'].shape[0]
         self.batch_idx = 0
 
     def get_batch_size(self):
@@ -33,9 +32,10 @@ class HeadRealCalibrator(trt.IInt8EntropyCalibrator2):
         if self.batch_idx >= self.num_frames:
             return None
         import torch
-        frame = self.frames[self.batch_idx]
+        frame = self.d  # stacked: d[name][i]
         self.batch_idx += 1
-        tensors = [torch.from_numpy(frame[name].astype(np.float32)).float().cuda() for name in names]
+        tensors = [torch.from_numpy(np.ascontiguousarray(
+            self.d[name][self.batch_idx - 1], dtype=np.float32)).float().cuda() for name in names]
         self._device_mems = tensors
         return [int(t.data_ptr()) for t in tensors]
 
@@ -115,7 +115,7 @@ def build_head_int8_orin(onnx_path, engine_path, calib_path, plugin_lib=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--onnx', default='onnx_export/output/sparsedrive_head.onnx')
+    parser.add_argument('--onnx', default='onnx_export/output/sparsedrive_head_sim.onnx')
     parser.add_argument('--engine', default='arm64/trt_compile/int8/output/head_int8.engine')
     parser.add_argument('--calib', default='arm64/trt_compile/int8/calib_data/head_calib.npz')
     parser.add_argument('--plugin', default='arm64/plugins_build/build/libplugins_orin.so')

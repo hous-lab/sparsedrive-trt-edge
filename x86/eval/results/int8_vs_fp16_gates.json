@@ -1,0 +1,138 @@
+{
+  "bb_feat_0": {
+    "cos_sim": 0.9890173412747453,
+    "mse": 4.898522818558256,
+    "status": "OK"
+  },
+  "bb_feat_1": {
+    "cos_sim": 0.9841547254354701,
+    "mse": 4.080615600122819,
+    "status": "OK"
+  },
+  "bb_feat_2": {
+    "cos_sim": 0.980877508757803,
+    "mse": 3.2322104897004666,
+    "status": "OK"
+  },
+  "bb_feat_3": {
+    "cos_sim": 0.9826496538132026,
+    "mse": 2.567941913628472,
+    "status": "OK"
+  },
+  "det_anchor_embed": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "ego_status": {
+    "cos_sim": 0.9999999999999897,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "hd_det_cls": {
+    "cos_sim": 0.9997770243335472,
+    "mse": 0.018309258825985,
+    "status": "OK"
+  },
+  "hd_det_quality": {
+    "cos_sim": 0.9870763059801095,
+    "mse": 0.02990537264364927,
+    "status": "OK"
+  },
+  "hd_det_reg": {
+    "cos_sim": 0.9998437933353429,
+    "mse": 0.03570859171276126,
+    "status": "OK"
+  },
+  "hd_instance_feature": {
+    "cos_sim": 0.9945332769160332,
+    "mse": 0.005257762364641617,
+    "status": "OK"
+  },
+  "image_wh": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "img": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "map_anchor_embed": {
+    "cos_sim": 0.9976877963509176,
+    "mse": 0.0015929764443028654,
+    "status": "OK"
+  },
+  "map_cls": {
+    "cos_sim": 0.999873522571069,
+    "mse": 0.008376248170000811,
+    "status": "OK"
+  },
+  "map_instance_feat": {
+    "cos_sim": 0.998822164556486,
+    "mse": 0.000979126100008918,
+    "status": "OK"
+  },
+  "map_reg": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "mask": {
+    "cos_sim": 0.9999999999999989,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "mp_lat_anchor": {
+    "cos_sim": 0.9981641615720248,
+    "mse": 0.15055214259871835,
+    "status": "OK"
+  },
+  "mp_lon_anchor": {
+    "cos_sim": 0.9589049886281723,
+    "mse": 1.708121445029974,
+    "status": "OK"
+  },
+  "mp_motion_cls": {
+    "cos_sim": 0.9794367734709142,
+    "mse": 0.24905279088903357,
+    "status": "OK"
+  },
+  "mp_motion_traj": {
+    "cos_sim": 0.9588067643542186,
+    "mse": 0.03634721953209198,
+    "status": "OK"
+  },
+  "mp_traj_cls": {
+    "cos_sim": 0.9981444568463937,
+    "mse": 0.05124713107943535,
+    "status": "OK"
+  },
+  "projection_mat": {
+    "cos_sim": 0.9999999999999998,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "queue_temp_anchor": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "queue_temp_feat": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "timestamp": {
+    "cos_sim": 1.0,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "tp_near": {
+    "cos_sim": 0.9999999999998889,
+    "mse": 0.0,
+    "status": "OK"
+  },
+  "gates_pass": true
+}

@@ -30,10 +30,15 @@ def flatten_feats(feat_i_list):
     """Per-level [6,256,h,w] -> feat_flat [1,22440,256] + spat [4,2] i32 + lvl [5] i32."""
     flat = torch.cat([f.reshape(f.shape[0], f.shape[1], -1).permute(0, 2, 1).reshape(-1, f.shape[1])
                       for f in feat_i_list], dim=0)
-    flat = flat.unsqueeze(0)
+    # Engine binding is 4-D (1, n_cam, sum_hw, 256); the cat yields the same
+    # bytes as (6*sum_hw, 256), so reshape to satisfy TRT's shape check
+    # (metadata-only view, memory untouched).
+    n_cam = feat_i_list[0].shape[0]
+    flat = flat.view(1, n_cam, -1, feat_i_list[0].shape[1])
     sizes = [h * w for h, w in FEAT_SHAPES]
     spat = torch.tensor([[h, w] for h, w in FEAT_SHAPES], dtype=torch.int32)
-    lvl = torch.tensor(np.cumsum([0] + sizes), dtype=torch.int32)
+    # lvl_start is [num_levels]=4 - drop the cumsum [:-1] trailing sentinel.
+    lvl = torch.tensor(np.cumsum([0] + sizes)[:-1], dtype=torch.int32)
     return flat.contiguous(), spat.cuda(), lvl.cuda()
 
 

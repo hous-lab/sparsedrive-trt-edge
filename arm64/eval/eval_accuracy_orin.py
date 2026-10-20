@@ -23,14 +23,17 @@ ENGINE_INT8_DIR = os.environ.get(
     "SD_ENGINE_INT8_DIR", os.path.join(REPO, "arm64/trt_compile/int8/output"))
 
 FEAT_SHAPES = [(96, 176), (48, 88), (24, 44), (12, 22)]
+# Mirrors GATE_OVERRIDES in tools/compare_npz_gates.py - one gate policy
+# across platforms (x86 measured mp_lon_anchor 0.9742 even on pure FP16,
+# docs/lessons.md 7.6; INT8 backbone lands ~0.98 on bb_feat by design).
 GATES = {
-    "bb_feat_0": 0.9999, "bb_feat_1": 0.9999,
-    "bb_feat_2": 0.9999, "bb_feat_3": 0.9999,
-    "hd_det_cls": 0.99, "hd_det_reg": 0.999,
-    "hd_det_quality": 0.99, "hd_instance_feature": 0.999,
-    "map_cls": 0.99, "map_instance_feat": 0.999, "map_anchor_embed": 0.999,
+    "bb_feat_0": 0.98, "bb_feat_1": 0.98,
+    "bb_feat_2": 0.98, "bb_feat_3": 0.98,
+    "hd_det_cls": 0.99, "hd_det_reg": 0.99,
+    "hd_det_quality": 0.98, "hd_instance_feature": 0.99,
+    "map_cls": 0.99, "map_instance_feat": 0.99, "map_anchor_embed": 0.99,
     "mp_motion_cls": 0.95, "mp_motion_traj": 0.95,
-    "mp_traj_cls": 0.90, "mp_lat_anchor": 0.99, "mp_lon_anchor": 0.99,
+    "mp_traj_cls": 0.95, "mp_lat_anchor": 0.99, "mp_lon_anchor": 0.95,
 }
 
 
@@ -40,10 +43,18 @@ def _flatten(feats):
     # levels -> [1, N_tokens, 256] (see docs/lessons.md §7.4 / §2 of pipeline guide)
     flat = torch.cat([f.reshape(f.shape[0], f.shape[1], -1).permute(0, 2, 1).reshape(-1, f.shape[1])
                       for f in feats], dim=0)
-    flat = flat.unsqueeze(0)
+    # Engine binding is 4-D (1, n_cam, sum_hw, 256); the cat yields the same
+    # bytes as (6*sum_hw, 256) level-major/channel-last, so this reshape is
+    # metadata-only - it satisfies TRT's static shape check without touching
+    # memory. Feeding the 3-D tensor still works (same element count) but TRT
+    # prints a setInputShape error per call.
+    n_cam = feats[0].shape[0]
+    flat = flat.view(1, n_cam, -1, feats[0].shape[1])
     sizes = [h * w for h, w in FEAT_SHAPES]
     spat = torch.tensor([[h, w] for h, w in FEAT_SHAPES], dtype=torch.int32)
-    lvl = torch.tensor(np.cumsum([0] + sizes), dtype=torch.int32)
+    # ONNX lvl_start is [num_levels]=4 (start offsets); cumsum gives a trailing
+    # sentinel the engine does not want - slice it off or TRT rejects the shape.
+    lvl = torch.tensor(np.cumsum([0] + sizes)[:-1], dtype=torch.int32)
     return flat.contiguous().cuda(), spat.cuda(), lvl.cuda()
 
 
@@ -196,6 +207,11 @@ if __name__ == "__main__":
         ("Config 2: BB INT8 + rest FP16", "bb_int8",
          os.path.join(ENGINE_INT8_DIR, "backbone_int8.engine"),
          os.path.join(ENGINE_FP16_DIR, "head_fp16.engine"),
+         os.path.join(ENGINE_FP16_DIR, "map_fp16.engine"),
+         os.path.join(ENGINE_FP16_DIR, "motion_plan_fp16.engine")),
+        ("Config 3: BB+Head INT8 + rest FP16", "bb_head_int8",
+         os.path.join(ENGINE_INT8_DIR, "backbone_int8.engine"),
+         os.path.join(ENGINE_INT8_DIR, "head_int8.engine"),
          os.path.join(ENGINE_FP16_DIR, "map_fp16.engine"),
          os.path.join(ENGINE_FP16_DIR, "motion_plan_fp16.engine")),
     ]

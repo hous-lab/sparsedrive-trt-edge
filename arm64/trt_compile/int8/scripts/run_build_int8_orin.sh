@@ -20,6 +20,7 @@ python "$DEPLOY_DIR/x86/trt_compile/int8/scripts/build_backbone_int8.py" \
     --engine "$DEPLOY_DIR/arm64/trt_compile/int8/output/backbone_int8.engine"
 
 python "$SCRIPT_DIR/build_head_int8_orin.py" \
+    --onnx "$DEPLOY_DIR/onnx_export/output/sparsedrive_head_sim.onnx" \
     --engine "$DEPLOY_DIR/arm64/trt_compile/int8/output/head_int8.engine" \
     --plugin "$DEPLOY_DIR/arm64/plugins_build/build/libplugins_orin.so"
 
