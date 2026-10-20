@@ -1,0 +1,3 @@
+from .patch_deformable_agg import patch_DeformableFeatureAggregation
+from .patch_instance_bank import patch_InstanceBank
+from .patch_instance_queue import patch_InstanceQueue

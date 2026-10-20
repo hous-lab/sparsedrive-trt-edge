@@ -1,0 +1,21 @@
+NOTICE
+======
+
+This project is licensed under the Apache License, Version 2.0 (see `LICENSE`).
+This project includes and derives from the third-party components listed below.
+Each component remains under its own license; the table maps components to their
+upstream sources and to where they appear in this repository.
+
+| Component | Upstream | Upstream license | Where in this repo |
+|---|---|---|---|
+| DeformableAggregation TensorRT plugin | Self-implemented for this project; op definition from SparseDriveV2 (swc-17/SparseDriveV2) | op lineage MIT | `plugins/deformable_aggregation/` |
+| ONNX export patches (symbolic registrations, If-node fixes) | Self-written, VAD-deploy style | — | `onnx_export/patches/` |
+| SparseDriveV2 model architecture / training code / configs | swc-17/SparseDriveV2 | MIT | external training repo; `configs/sparsedrive_stage2.py` vendored verbatim |
+| SparseDriveV2-Small checkpoint | wenchaosun/SparseDriveV2 (Hugging Face) | see upstream | linked in `ckpts/README.md`, not redistributed |
+| Bench2Drive benchmark / dataset tooling | Thinklab-SJTU/Bench2Drive | see upstream repository | dataset terms; data not redistributed |
+| mmcv / mmdet / mmdet3d (OpenMMLab) | open-mmlab | Apache-2.0 | runtime dependencies via the external training repo |
+| PyTorch | pytorch | BSD-3-Clause | export/eval tooling |
+| ONNX / onnx-graphsurgeon / onnx-simplifier | onnx / NVIDIA / onnx communities | MIT | ONNX tooling |
+| TensorRT, CUDA, JetPack runtimes | NVIDIA | Apache-2.0 (TensorRT open-source components); JetPack/CUDA under NVIDIA software license terms shipped with them | build/deploy dependencies |
+| CARLA simulator | carla-simulator/carla | MIT | mentioned for the deferred Autoware closed-loop track (separate repository) |
+| Autoware | autowarefoundation/autoware | Apache-2.0 | deferred Autoware closed-loop track (separate repository) |

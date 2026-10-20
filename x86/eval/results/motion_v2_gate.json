@@ -1,0 +1,37 @@
+{
+  "demo": "/home/hous/Projects/_hot/e2e/SparseDriveV2/sparsedrive_deploy_pipeline/sparsedrive-trt-edge/data/demo_data/sample0.npz",
+  "reference": "/home/hous/Projects/_hot/e2e/SparseDriveV2/sparsedrive_deploy_pipeline/sparsedrive-trt-edge/data/x86_reference.npz",
+  "results": {
+    "mp_motion_cls": {
+      "cos_sim": 0.9964855867804692,
+      "mse": 0.04229619681559864,
+      "status": "OK",
+      "gate": 0.95
+    },
+    "mp_motion_traj": {
+      "cos_sim": 0.98946047472224,
+      "mse": 0.011153554086576858,
+      "status": "OK",
+      "gate": 0.95
+    },
+    "mp_traj_cls": {
+      "cos_sim": 0.9855127286300618,
+      "mse": 0.8147765700851308,
+      "status": "OK",
+      "gate": 0.9
+    },
+    "mp_lat_anchor": {
+      "cos_sim": 0.9989864583935568,
+      "mse": 0.08321970532331133,
+      "status": "OK",
+      "gate": 0.99
+    },
+    "mp_lon_anchor": {
+      "cos_sim": 0.974235662230941,
+      "mse": 1.0708856432644123,
+      "status": "WARN",
+      "gate": 0.99
+    }
+  },
+  "gates_pass": true
+}

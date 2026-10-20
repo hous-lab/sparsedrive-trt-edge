@@ -1,0 +1,51 @@
+# --- Regenerable artifacts (see README "committed vs regenerable") ---
+# Engines / ONNX / weights are build products, not sources.
+*.engine
+*.onnx
+*.pth
+*.trt
+*.plan
+
+# Calibration / reference tensors (regenerable via tools/)
+*.npz
+
+# Demo inputs (regenerable via tools/gen_demo_data.py)
+onnx_export/demo_data/
+!onnx_export/demo_data/README.md
+
+# Build products
+build/
+*.o
+*.so
+*.a
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv*/
+
+# Dataset (external, large)
+data/bench2drive/
+data/nuscenes/
+data/infos/
+data/calib_data/
+data/demo_data/
+
+# IDE
+.vscode/
+.idea/
+
+# Debug/intermediate
+*.log
+!docs/assets/*.png
+
+# HTML reports
+*.html
+rule.xml
+
+# Anchors are sources, not regenerable artifacts (vendored from training repo)
+!configs/anchors/*.npz
+
+# OMC session state
+.omc/
