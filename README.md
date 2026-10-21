@@ -7,10 +7,9 @@ End-to-end TensorRT deployment of [SparseDriveV2](https://github.com/swc-17/Spar
 | Platform | Config | BB | Head | Map | Motion | Cascade |
 |---|---|---|---|---|---|---|
 | x86 (4090 Laptop) | FP16 | 5.6 | 4.4 | 6.1 | 5.0 | 21.1 ms |
-| x86 (4090 Laptop) | BB+Head INT8 | 2.7 | 4.4 | 6.1 | 5.0 | 18.2 ms |
+| x86 (4090 Laptop) | INT8 | 2.7 | 4.4 | 6.1 | 5.0 | 18.2 ms |
 | Orin MAXN | FP16 | 22.1 | 17.3 | 26.1 | 20.7 | **86.2 ms** |
-| Orin MAXN | BB INT8 | **11.3** | 17.3 | 26.1 | 20.7 | **75.4 ms** |
-| Orin MAXN | BB+Head INT8 | 11.3 | 17.4 | 26.1 | 20.7 | 75.5 ms |
+| Orin MAXN | INT8 | **11.3** | 17.4 | 26.1 | 20.7 | 75.5 ms |
 
 > Per-engine and cascade latency (200-iter mean per engine, `bench_engines.py`)
 > The x86 p50/p90 (16.15/16.52 ms) are a separate 50-iter p50 measurement on the FP16 chain.
