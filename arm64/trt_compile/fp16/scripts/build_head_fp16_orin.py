@@ -79,7 +79,7 @@ def build_head_fp16_orin(onnx_path, engine_path, plugin_lib=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--onnx', default='onnx_export/output/sparsedrive_head.onnx')
+    parser.add_argument('--onnx', default='onnx_export/output/sparsedrive_head_sim.onnx')
     parser.add_argument('--engine', default='arm64/trt_compile/fp16/output/head_fp16.engine')
     parser.add_argument('--plugin', default='arm64/plugins_build/build/libplugins_orin.so')
     args = parser.parse_args()
