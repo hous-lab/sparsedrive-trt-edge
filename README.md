@@ -27,8 +27,8 @@ All numbers in this README and in `docs/` were measured on exactly these two dev
 | SoC | AGX Orin 64 GB, Ampere GPU (**sm_87**), 2048 CUDA cores |
 | Memory | 64 GB LPDDR5, 204.8 GB/s |
 | Power modes | MAXN / 50 W / 30 W / 15 W (see docs/power_modes.md) |
-| TensorRT | 10.3 (JetPack, dpkg layout) |
-| OS | JetPack (L4T), Linux aarch64 |
+| TensorRT | 10.3 (JetPack, dpkg layout; 10.4 is measurably slower on this SoC, see docs/trt_versions.md) |
+| OS | JetPack 6.2.2, L4T 36.5.0, Linux aarch64 |
 
 ## Key results
 
@@ -109,7 +109,7 @@ configs/     vendored training config + kmeans anchors + ego query
 scripts/     cross-cutting drivers (run_orin_pipeline.sh, sync_to_orin.sh)
 data/        demo inputs + x86 reference (generated; see data/README.md)
 ckpts/       no weights stored; see ckpts/README.md for the weight policy
-docs/        environment, pipeline guide, profiling, power modes, lessons
+docs/        environment, pipeline guide, profiling, power modes, TRT version study, lessons
 ```
 
 ## Weights policy
