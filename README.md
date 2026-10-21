@@ -1,64 +1,128 @@
-# sparsedrive-trt-edge
+# SparseDriveV2 TensorRT edge deployment
 
-TensorRT end-side deployment of SparseDriveV2 (detection + online mapping +
-motion/planning) for automotive SoCs and laptop-class GPUs. Companion to
-[vad-trt-edge](https://github.com/hous-lab/vad-trt-edge); shares the same
-pipeline layout: plugin -> ONNX (4 sub-models) -> FP16 engines -> demo data ->
-reference -> accuracy gates -> renders.
+End-to-end TensorRT deployment of **SparseDriveV2** (surround-view 3D detection + online mapping + motion prediction & planning) for automotive SoCs and laptop-class GPUs: TRT plugin -> ONNX export (4 sub-models) -> FP16/INT8 engine builds -> engine-vs-PyTorch accuracy gates -> latency bench -> renders. Companion to [vad-trt-edge](https://github.com/hous-lab/vad-trt-edge) (same pipeline layout, same accuracy-gate methodology).
 
-## Hardware note (important)
+## Hardware platforms
 
-All reported x86 numbers were measured on an **RTX 4090 Laptop GPU** (16 GB).
-The 4090 Laptop is a different silicon than the desktop RTX 4090: it has
-5,888 CUDA cores, 16 GB GDDR6, and about **57% of the desktop 4090's memory
-bandwidth**. Do not compare these numbers against desktop-4090 results. Orin
-results are measured on Jetson AGX Orin 64GB.
+All numbers in this README and in `docs/` were measured on exactly these two devices - latency figures are **not** transferable to other GPUs, accuracy gates are anchored per engine build.
 
-## Results summary
+### x86_64 workstation - RTX 4090 Laptop GPU
 
-| Metric | Value |
+| Component | Specification |
 |---|---|
-| x86 FP16 cascade latency (backbone+head+map+motion, RTX 4090 Laptop) | **p50 16.15 ms / p90 16.52 ms** (~62 FPS) |
-| x86 accuracy gates (PT vs engine cascade, single frame) | see `x86/eval/results/motion_v2_gate.json` |
-| Engine sizes (FP16) | backbone 53.1 MB, head 55.6 MB, map 56.1 MB, motion_plan 39.3 MB |
-| ONNX param count (incl. baked constants) | backbone 26.8 M, head 20.0 M, map 26.9 M, motion_plan 16.7 M |
-| Motion engine I/O | 22 inputs / 5 outputs (queue-tensor convention, see docs/pipeline_guide.md) |
+| GPU | NVIDIA GeForce RTX 4090 **Laptop** GPU (Ada, **sm_89**) |
+| VRAM | 16 GB GDDR6 |
+| Memory bandwidth | ~576 GB/s (~57% of the desktop 4090's 1008 GB/s) |
+| TGP | up to 175 W (incl. Dynamic Boost) |
+| CUDA / driver | 11.8 / 580.95.05 |
+| TensorRT | 10.4.0.26 (pip wheel + matching tarball for the plugin) |
+| OS | Ubuntu 22.04 (Linux 6.5) |
 
-Accuracy gates (cosine similarity, engine cascade vs PT reference):
-motion_cls 0.9965, motion_traj 0.9895, traj_cls 0.9856, lat_anchor 0.9991,
-lon_anchor 0.9742 (WARN, see docs/lessons.md).
+**Not a desktop RTX 4090.** The laptop part has 5,888 CUDA cores vs 16,384 on desktop, 16 GB vs 24 GB VRAM, and ~57% of the desktop part's memory bandwidth. If you reproduce on a desktop 4090 (or any other GPU), expect lower latencies than this README reports - that difference is hardware, not software. Accuracy results are unaffected, since they are properties of the engine builds, not of the GPU speed.
+
+### NVIDIA Jetson AGX Orin 64 GB
+
+| Component | Specification |
+|---|---|
+| SoC | AGX Orin 64 GB, Ampere GPU (**sm_87**), 2048 CUDA cores |
+| Memory | 64 GB LPDDR5, 204.8 GB/s |
+| Power modes | MAXN / 50 W / 30 W / 15 W (see docs/power_modes.md) |
+| TensorRT | 10.3 (JetPack, dpkg layout) |
+| OS | JetPack (L4T), Linux aarch64 |
+
+## Key results
+
+Unless stated otherwise, **Orin numbers use the MAXN mode** (all cores online, clocks pinned via `jetson_clocks`) - the fastest unthrottled configuration. Other power modes (50 W / 30 W / 15 W) and per-mode power draw are covered in [docs/power_modes.md](docs/power_modes.md).
+
+### Latency
+
+Per-engine and cascade latency (200-iter mean per engine, `bench_engines.py`); the x86 p50/p90 (16.15/16.52 ms) are a separate 50-iter p50 measurement on the FP16 chain:
+
+| Platform | Config | BB | Head | Map | Motion | Cascade |
+|---|---|---|---|---|---|---|
+| x86 (4090 Laptop) | FP16 | 5.6 | 4.4 | 6.1 | 5.0 | 21.1 ms |
+| x86 (4090 Laptop) | BB+Head INT8 | 2.7 | 4.4 | 6.1 | 5.0 | 18.2 ms |
+| Orin MAXN | FP16 | 22.1 | 17.3 | 26.1 | 20.7 | **86.2 ms** |
+| Orin MAXN | BB INT8 | **11.3** | 17.3 | 26.1 | 20.7 | **75.4 ms** |
+| Orin MAXN | BB+Head INT8 | 11.3 | 17.4 | 26.1 | 20.7 | 75.5 ms |
+
+Backbone INT8 is the only lever on both platforms: 2.1x on x86 (cascade 21.1 -> 18.2 ms) and 1.96x on Orin MAXN (cascade 86.2 -> 75.4 ms, ~12%). Head INT8 buys nothing - the deformable aggregation plugin (the head's dominant cost) is forced FP16, so quantizing the MatMuls around it never moves the critical path.
+
+### Accuracy
+
+Cosine similarity, engine cascade vs PyTorch reference, single real demo frame (gates per docs/lessons.md §7.17):
+
+| Output | x86 FP16 | x86 INT8 | Orin FP16 | Orin INT8 |
+|---|---|---|---|---|
+| bb_feat_0..3 | 0.9999+ | 0.981-0.989 | 0.9999+ | 0.981-0.989 |
+| hd_det_cls / hd_det_reg | 0.9999+ | 0.9998 | 0.9999+ | 0.9998 |
+| hd_det_quality | 0.9999 | 0.9871 | 0.9999 | 0.9863 |
+| map_cls | 0.9999 | 0.9999 (map stays FP16) | 0.9999+ | 0.9999+ (FP16) |
+| mp_motion_cls | 0.9965 | 0.979 | 0.9987 | 0.9785 |
+| mp_motion_traj | 0.9895 | 0.959 | 0.9971 | 0.9615 |
+| mp_traj_cls | 0.9856 | 0.998 | 0.9998 | 0.9981 |
+| mp_lat_anchor | 0.9991 | 0.9982 | 0.9988 | 0.9979 |
+| mp_lon_anchor | 0.9742 (WARN) | 0.9589 | 0.9742 | 0.9635 |
+
+The Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 on both platforms; mp_lon_anchor 0.9635 Orin vs 0.9589 x86) - the INT8 tier is cross-platform reproducible. Full per-tensor tables: `arm64/eval/results/accuracy_comparison.json` (Orin, three configs) and `x86/eval/results/int8_vs_fp16_gates.json` (x86). The lon_anchor WARN reflects argmax-sensitive velocity-profile selection near ties under reduced precision (docs/lessons.md §7.6), not a deployment defect.
+
+## Get started
+
+### 1. Environment
+
+The conda environment is built exactly as the upstream training repo instructs - follow the official [SparseDriveV2 quick start](https://github.com/swc-17/SparseDriveV2/blob/bench2drive/docs/quick_start.md), then `conda activate sparsedrive` (torch 2.0.1+cu118, mmcv 1.7.1, TensorRT python 10.4.0.26, onnx 1.15, numpy<2). x86-side specifics (multiple TRT installs, numpy 2.x pickle shims, which python) are in [docs/environment.md](docs/environment.md).
+
+### 2. Weights and data inputs
+
+Download the SparseDriveV2-Small stage2 checkpoint per the link table in [ckpts/README.md](ckpts/README.md) (upstream weights are linked, never redistributed). The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split; `run_pipeline.sh` step 5 generates demo npz from them. Set the env vars in `run_pipeline.sh` (SD_CKPT, dataset roots) if your paths differ.
+
+### 3. x86 pipeline
+
+```bash
+conda activate sparsedrive
+bash run_pipeline.sh                # 8 idempotent steps: plugin -> ONNX -> FP16 engines -> demo data -> gates -> renders
+SD_BUILD_INT8=1 bash run_pipeline.sh  # adds the INT8 tier (calib -> INT8 engines -> gates + bench)
+```
+
+See [docs/pipeline_guide.md](docs/pipeline_guide.md) for the step table and [docs/engine_profiling.md](docs/engine_profiling.md) for what each stage produces.
+
+### 4. Orin pipeline
+
+```bash
+# on the x86 host:
+bash scripts/sync_to_orin.sh
+# on the Orin:
+bash scripts/run_orin_pipeline.sh   # 5 steps; SD_BUILD_INT8=1 adds the INT8 tier
+```
+
+Accuracy on Orin is engine-vs-engine against the x86 reference (the training env is impractical on the device): `arm64/eval/eval_accuracy_orin.py` compares all four engines against `data/x86_reference.npz` with cosine/MSE gates. Latency/power: `arm64/eval/bench_engines.py` (per-engine, any power mode) and `arm64/eval/run_power_modes.sh` (per-mode sweep with tegrastats).
 
 ## Repo layout
 
 ```
 plugins/     DeformableAggregation TRT plugin (x86 + Orin)
-onnx_export/ export scripts + patches + output ONNX
-x86/         FP16 engine builds + eval (gates, renders)
-arm64/       Orin: plugin build, TRT compile, accuracy/latency/power eval
-tools/       demo data + x86 reference generation
+onnx_export/ export scripts + patches + If-folding tool + output ONNX
+x86/         FP16/INT8 engine builds + eval (gates, renders)
+arm64/       Orin: plugin build, TRT compile (FP16/INT8), accuracy/latency/power eval
+tools/       demo data, x86 reference generation, gate checker
 configs/     vendored training config + kmeans anchors + ego query
 scripts/     cross-cutting drivers (run_orin_pipeline.sh, sync_to_orin.sh)
 data/        demo inputs + x86 reference (generated; see data/README.md)
 ckpts/       no weights stored; see ckpts/README.md for the weight policy
-docs/        environment, pipeline guide, profiling, lessons
+docs/        environment, pipeline guide, profiling, power modes, lessons
 ```
-
-## Quick start (x86)
-
-```bash
-conda activate sparsedrive      # torch 2.0.1+cu118, TRT 10.4.0.26, mmcv 1.7.1
-bash run_pipeline.sh             # 8 steps, idempotent; see docs/pipeline_guide.md
-SD_BUILD_INT8=1 bash run_pipeline.sh   # adds the INT8 tier (docs/model_variants.md §4.5)
-```
-
-For Orin: `scripts/sync_to_orin.sh`, then on the device
-`bash scripts/run_orin_pipeline.sh` (5 steps; `SD_BUILD_INT8=1` adds INT8).
 
 ## Weights policy
 
-Per `ckpts/README.md`: upstream checkpoints are linked (not redistributed);
-models obtained indirectly (QAT or similar) can be published to Hugging Face
-via CLI upload.
+Per [ckpts/README.md](ckpts/README.md): upstream checkpoints are linked, never redistributed. Models obtained indirectly (QAT or similar retrained variants) can be published to the maintainer's Hugging Face account via `huggingface-cli upload`.
+
+## Acknowledgements
+
+- [SparseDriveV2](https://github.com/swc-17/SparseDriveV2/tree/bench2drive) - the upstream model, training configs and checkpoints; the deployed variant is SparseDriveV2-Small (B2D stage2).
+- [SparseDriveV2 quick start](https://github.com/swc-17/SparseDriveV2/blob/bench2drive/docs/quick_start.md) - the conda environment this repo builds on.
+- [Bench2Drive](https://github.com/Thinklab-SJTU/Bench2Drive) - the closed-loop benchmark whose val split supplies demo/calib frames.
+- [vad-trt-edge](https://github.com/hous-lab/vad-trt-edge) - the companion VAD deployment repo that established the pipeline layout.
+- [NVIDIA TensorRT](https://github.com/NVIDIA/TensorRT) - inference engine and plugin SDK.
 
 ## License
 
