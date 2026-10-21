@@ -72,9 +72,9 @@ The Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 o
 
 The conda environment is built exactly as the upstream training repo instructs - follow the official [SparseDriveV2 quick start](https://github.com/swc-17/SparseDriveV2/blob/bench2drive/docs/quick_start.md), then `conda activate sparsedrive` (torch 2.0.1+cu118, mmcv 1.7.1, TensorRT python 10.4.0.26, onnx 1.15, numpy<2). x86-side specifics (multiple TRT installs, numpy 2.x pickle shims, which python) are in [docs/environment.md](docs/environment.md).
 
-### 2. Weights and data inputs
+### 2. Weights, ONNX, and data inputs
 
-Download the SparseDriveV2-Small stage2 checkpoint per the link table in [ckpts/README.md](ckpts/README.md) (upstream weights are linked, never redistributed). The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split; `run_pipeline.sh` step 5 generates demo npz from them. Set the env vars in `run_pipeline.sh` (SD_CKPT, dataset roots) if your paths differ.
+Download the SparseDriveV2-Small stage2 checkpoint per the link table in [ckpts/README.md](ckpts/README.md) (upstream weights are linked, never redistributed). To skip the ONNX-export step, the four deployment ONNX are published at [hous-lab/sparsedrive-trt-edge on Hugging Face](https://huggingface.co/hous-lab/sparsedrive-trt-edge) - place them under `onnx_export/output/` and continue from the engine-build step (the HF repo hosts only our own export artifacts; weights stay upstream-link-only). The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split; `run_pipeline.sh` step 5 generates demo npz from them. Set the env vars in `run_pipeline.sh` (SD_CKPT, dataset roots) if your paths differ.
 
 ### 3. x86 pipeline
 
@@ -101,7 +101,7 @@ Accuracy on Orin is engine-vs-engine against the x86 reference (the training env
 
 ```
 plugins/     DeformableAggregation TRT plugin (x86 + Orin)
-onnx_export/ export scripts + patches + If-folding tool + output ONNX
+onnx_export/ export scripts + patches + If-folding tool + output ONNX + HF model card
 x86/         FP16/INT8 engine builds + eval (gates, renders)
 arm64/       Orin: plugin build, TRT compile (FP16/INT8), accuracy/latency/power eval
 tools/       demo data, x86 reference generation, gate checker

@@ -22,10 +22,10 @@
 
 The deployed Small variant reaches p50 16.15 ms on RTX 4090 Laptop (§3.2). On Orin (MAXN, the reporting standard) the FP16 cascade is 86.2 ms - inside the 100 ms (10 Hz) budget; capped modes fall below real-time (docs/power_modes.md §5.3). Measure with `arm64/eval/bench_engines.py` under each power mode (docs/power_modes.md).
 
-## 4.4 Weight links (policy per ckpts/README.md)
+## 4.4 Weight and ONNX links (policy per ckpts/README.md)
 
-- SparseDriveV2-Small stage2 checkpoint: linked from [wenchaosun/SparseDriveV2 on Hugging Face](https://huggingface.co/wenchaosun/SparseDriveV2); not redistributed here.
-- If we later publish a QAT variant, upload via `huggingface-cli upload` to the maintainer's HF account (see ckpts/README.md).
+- SparseDriveV2-Small stage2 checkpoint: download from [wenchaosun/SparseDriveV2 on Hugging Face](https://huggingface.co/wenchaosun/SparseDriveV2). Weights are link-only: rehosting upstream weights on our own HuggingFace - including any retrained/QAT variant derived from them - is prohibited (copyright).
+- The four deployment ONNX exported by this pipeline are published at [hous-lab/sparsedrive-trt-edge on Hugging Face](https://huggingface.co/hous-lab/sparsedrive-trt-edge) - these are our own export artifacts and are redistributed there (provenance in the HF model card).
 
 ## 4.5 INT8 tier (backbone + head)
 
