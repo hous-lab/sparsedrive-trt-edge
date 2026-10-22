@@ -43,7 +43,7 @@ The conda environment is built exactly as the upstream training repo instructs -
 
 ### 2. Weights, ONNX, and data inputs
 
-- Download the SparseDriveV2-Small stage2 checkpoint per the link table in [ckpts/README.md](ckpts/README.md) (upstream weights are linked, never redistributed). 
+- Download the upstream files - the SparseDriveV2-Small stage2 checkpoint **and the six anchor npy/npz files** - per the download table in [ckpts/README.md](ckpts/README.md) (upstream files are linked, never redistributed; anchors go to `configs/anchors/`, weights to `ckpts/`). 
 - To skip the ONNX-export step, the four deployment ONNX are published at [hous-lab/sparsedrive-trt-edge on Hugging Face](https://huggingface.co/hous-lab/sparsedrive-trt-edge)
     - place them under `onnx_export/output/` and continue from the engine-build step (the HF repo hosts only our own export artifacts; weights stay upstream-link-only). 
 - The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split, and `run_pipeline.sh` step 5 generates demo npz from them. 

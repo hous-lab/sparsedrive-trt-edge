@@ -4,7 +4,7 @@
 
 | Step | What it does | Skip condition |
 |---|---|---|
-| 1 | symlink `data/kmeans -> ../configs/anchors` | always re-links |
+| 1 | symlink `data/kmeans -> ../configs/anchors` (step 0: the anchor npy/npz in `configs/anchors/` are upstream download-only - fetch them per the table in [ckpts/README.md](../ckpts/README.md) first) | always re-links |
 | 2 | plugin build (`plugins/build_x86.sh`) | `plugins/build/libplugins.so` exists |
 | 3 | ONNX export (backbone/head/map/motion_plan) | per-model ONNX exists |
 | 4 | FP16 engine build | per-engine file exists |

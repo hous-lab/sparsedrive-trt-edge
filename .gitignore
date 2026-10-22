@@ -44,8 +44,10 @@ data/demo_data/
 *.html
 rule.xml
 
-# Anchors are sources, not regenerable artifacts (vendored from training repo)
-!configs/anchors/*.npz
+# Upstream anchor files are download-only (see ckpts/README.md for URLs +
+# sha256); only our self-produced ego query stays tracked
+configs/anchors/*
+!configs/anchors/ego_query.npz
 
 # OMC session state
 .omc/

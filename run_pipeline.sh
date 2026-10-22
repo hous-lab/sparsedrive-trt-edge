@@ -15,8 +15,18 @@ set -e
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO"
 
-echo "===== [1/8] kmeans anchor symlink ====="
+echo "===== [1/8] upstream anchors check + kmeans symlink ====="
 mkdir -p data
+missing=0
+for f in kmeans_det_900.npy kmeans_map_100.npy kmeans_motion_6.npy path_1m_pts_15_1024_b2d_new_ego.npy trajectory_1024_256_b2d.npz vel_seq_K256_t30.npy; do
+  [ -f "configs/anchors/$f" ] || { echo "MISSING configs/anchors/$f"; missing=1; }
+done
+if [ $missing -eq 1 ]; then
+  echo "Upstream anchor files are download-only (not committed to this repo)."
+  echo "Fetch them from https://huggingface.co/wenchaosun/SparseDriveV2/tree/main"
+  echo "into configs/anchors/ - exact URLs, sha256 and placement: ckpts/README.md"
+  exit 1
+fi
 ln -sfn ../configs/anchors data/kmeans
 ls -l data/kmeans/ | head -3
 
