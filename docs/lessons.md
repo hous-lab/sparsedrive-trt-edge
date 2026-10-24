@@ -6,7 +6,7 @@ Symptom: engine build fails with "could not find any supported formats" on the d
 
 1. CMake had no valid TENSORRT_ROOT and fell back to stale apt TRT 8.6.1 headers; the plugin compiled against TRT 8 API.
 2. TRT 10.4 DOES have `DataType::kINT64`. The first "fix" (a `#if NV_TENSORRT_MAJOR >= 10` guard that dropped the int64 branch) was wrong and *caused* the failure: the plugin must ACCEPT int64 plugin inputs, because spatial_shape/level_start_index arrive from ONNX as int64 constants.
-3. The real fix: build the plugin with `TRT_ROOT=/usr/src/TensorRT-10.4.0.26` (build_x86.sh now auto-detects the tarball matching the python wheel) and keep the plugin accepting kINT32|kINT64, casting to int32 inside enqueue.
+3. The real fix: build the plugin with `TRT_ROOT=/usr/src/TensorRT-10.4.0.26` ([plugins/build_x86.sh](../plugins/build_x86.sh) now auto-detects the tarball matching the python wheel) and keep the plugin accepting kINT32|kINT64, casting to int32 inside enqueue.
 
 ## 7.2 chdir poisoning
 
@@ -22,15 +22,15 @@ The collated batch tensors are already batch-first: `projection_mat [1,6,4,4]`. 
 
 ## 7.4 Engine I/O conventions (squeezed metas)
 
-Engines take SQUEEZED per-sample metas: projection_mat [6,4,4], image_wh [6,2], ego_status [10], tp_near [2], gt_ego_fut_cmd [6] i64, timestamp [1]. The demo npz saves exactly these shapes (§2.2-2.3).
+Engines take SQUEEZED per-sample metas: projection_mat [6,4,4], image_wh [6,2], ego_status [10], tp_near [2], gt_ego_fut_cmd [6] i64, timestamp [1]. The demo npz saves exactly these shapes (§2.2-2.3, [docs/pipeline_guide.md](pipeline_guide.md)).
 
 ## 7.5 map_reg zeros bridge
 
-The map engine has no regression output, so the deployed chain feeds map_reg = zeros [1,100,2] into the motion engine; gen_demo_data mirrors this on the PT side (zeroed before motion_plan_head) so gates compare like with like.
+The map engine has no regression output, so the deployed chain feeds map_reg = zeros [1,100,2] into the motion engine; [tools/gen_demo_data.py](../tools/gen_demo_data.py) mirrors this on the PT side (zeroed before motion_plan_head) so gates compare like with like.
 
 ## 7.6 lon_anchor WARN (0.9742)
 
-cos-sim 0.9742 < 0.99 gate but > gate-0.02 (WARN band). Mechanism: the planning head selects a velocity profile by argmax over 1024 (64x16) anchor scores; near-ties flip under FP16. Perception outputs stay >0.98. Treat as a known FP16 artifact of argmax-style selection, documented in x86/eval/results/motion_v2_gate.json.
+cos-sim 0.9742 < 0.99 gate but > gate-0.02 (WARN band). Mechanism: the planning head selects a velocity profile by argmax over 1024 (64x16) anchor scores; near-ties flip under FP16. Perception outputs stay >0.98. Treat as a known FP16 artifact of argmax-style selection, documented in [x86/eval/results/motion_v2_gate.json](../x86/eval/results/motion_v2_gate.json).
 
 ## 7.7 TRT-8.6.1 apt headers vs tarballs
 
@@ -42,13 +42,13 @@ Info pickles from numpy 2.x envs need the `numpy._core` shim (§1.3).
 
 ## 7.9 Building on Jetson (TRT 10.3, dpkg layout)
 
-JetPack's TRT differs from the x86 tarball in three ways; build_orin.sh handles all three:
+JetPack's TRT differs from the x86 tarball in three ways; [arm64/plugins_build/build_orin.sh](../arm64/plugins_build/build_orin.sh) handles all three:
 
 1. **Headers/libs live in multiarch dirs** (/usr/include/aarch64-linux-gnu, /usr/lib/aarch64-linux-gnu), not in a $TRT_ROOT/{include,lib} tree. The script builds a symlink-stub TRT root pointing at both.
 2. **An old tarball may shadow the dpkg TRT**: /usr/src/TensorRT-8.6.1.6 ships with JetPack and its headers are TRT 8. Probing for "any tarball" picks it and the plugin builds against the WRONG headers. The script only accepts tarballs whose NvInfer.h defines NV_TENSORRT_MAJOR 10.
-3. **nvcc is not on the non-interactive PATH**: CMake needs -DCMAKE_CUDA_COMPILER=$CUDA_ROOT/bin/nvcc, and a stale CMakeCache.txt from a failed run poisons CMAKE_CUDA_ARCHITECTURES — build_orin.sh clears the cache before configuring.
+3. **nvcc is not on the non-interactive PATH**: CMake needs -DCMAKE_CUDA_COMPILER=$CUDA_ROOT/bin/nvcc, and a stale CMakeCache.txt from a failed run poisons CMAKE_CUDA_ARCHITECTURES — [arm64/plugins_build/build_orin.sh](../arm64/plugins_build/build_orin.sh) clears the cache before configuring.
 
-With TRT 10.3's builder, the exported ONNX is also rejected: "IIfConditionalOutputLayer inputs must have the same shape ([1,900,13,3] vs [1,900,13,3,1])". These are shape-guarded squeezes (x.squeeze(-1) if x.shape[-1] == 1 else x) that torch.onnx.export emits for no-arg .squeeze() calls; TRT 10.4 folds them at build time, 10.3 does not. tools/fold_if_subgraphs.py inlines the Squeeze branch statically and writes <name>_sim.onnx; both x86 and Orin now build engines from the _sim files, so one set of ONNX serves both.
+With TRT 10.3's builder, the exported ONNX is also rejected: "IIfConditionalOutputLayer inputs must have the same shape ([1,900,13,3] vs [1,900,13,3,1])". These are shape-guarded squeezes (x.squeeze(-1) if x.shape[-1] == 1 else x) that torch.onnx.export emits for no-arg .squeeze() calls; TRT 10.4 folds them at build time, 10.3 does not. [tools/fold_if_subgraphs.py](../tools/fold_if_subgraphs.py) inlines the Squeeze branch statically and writes <name>_sim.onnx; both x86 and Orin now build engines from the _sim files, so one set of ONNX serves both.
 
 Folding has its own traps (each cost a debugging round-trip):
 1. **Topological order**: the branch nodes must be spliced at the If node's own position, not appended at the graph end — consumers (TopK/Slice) would otherwise precede their new input ("Nodes in a graph must be topologically sorted" / TRT "Trying to access weights or a null tensor").
@@ -75,7 +75,7 @@ Calibration data is a stacked npz: d[k][i] = input k of frame i. Storage is floa
 
 ## 7.14 15W Myelin context-creation failure
 
-Under MODE_15W (2 CPU cores, low clocks) the Map FP16 engine's create_execution_context() failed with "Myelin cask_fusion unknown internal error" once; the first bench crashed on ctx.set_input_shape with a None context while BB/Head had already been measured. The retry in bench_engines.py does NOT clear it - on the re-run Map still failed (it is deterministic on this board at 15W). bench_engines.py isolates per-engine failures into a "failed" list in bench_results.json instead of dying, so one engine cannot void the whole mode's data. Treat 15W Map latency as unavailable on this board and report the 3-engine sum.
+Under MODE_15W (2 CPU cores, low clocks) the Map FP16 engine's create_execution_context() failed with "Myelin cask_fusion unknown internal error" once; the first bench crashed on ctx.set_input_shape with a None context while BB/Head had already been measured. The retry in [arm64/eval/bench_engines.py](../arm64/eval/bench_engines.py) does NOT clear it - on the re-run Map still failed (it is deterministic on this board at 15W). bench_engines.py isolates per-engine failures into a "failed" list in [bench_results.json](../arm64/eval/results/power/15W/bench_results.json) instead of dying, so one engine cannot void the whole mode's data. Treat 15W Map latency as unavailable on this board and report the 3-engine sum.
 
 ## 7.15 lvl_start / feat_flat feed contract (motion engine)
 
@@ -83,12 +83,12 @@ The motion ONNX declares lvl_start as [4] (per-cam level start offsets, cumsum o
 
 ## 7.16 Any head engine build must parse sparsedrive_head_sim.onnx
 
-build_head_int8_orin.py defaulted to the UNFOLDED sparsedrive_head.onnx; TRT fails it at parse with IIfConditionalOutputLayer shape conflict ([1,900,13,3] vs [1,900,13,3,1]) in /det_head/layers.7/kps_generator/If. The FP16 builder already used the If-folded *_sim.onnx - all head engine builds (FP16 or INT8) must parse sparsedrive_head_sim.onnx. Rule: an INT8 variant of an existing builder inherits the builder's onnx source, not the raw export.
+[arm64/trt_compile/int8/scripts/build_head_int8_orin.py](../arm64/trt_compile/int8/scripts/build_head_int8_orin.py) defaulted to the UNFOLDED sparsedrive_head.onnx; TRT fails it at parse with IIfConditionalOutputLayer shape conflict ([1,900,13,3] vs [1,900,13,3,1]) in /det_head/layers.7/kps_generator/If. The FP16 builder already used the If-folded *_sim.onnx - all head engine builds (FP16 or INT8) must parse sparsedrive_head_sim.onnx. Rule: an INT8 variant of an existing builder inherits the builder's onnx source, not the raw export.
 
 ## 7.17 One gate policy, one table, both platforms
 
-x86 (tools/compare_npz_gates.py GATE_OVERRIDES) and Orin (arm64/eval/eval_accuracy_orin.py GATES) drifted apart: the Orin table gated mp_lon_anchor at 0.99 (measured 0.9742 on pure FP16 - unmeetable), bb_feat at 0.9999 (INT8 backbone lands ~0.98 by design - unmeetable). Result: an INT8 run that is bit-consistent with x86 reported GATES PASS: False. The x86 table is the source of truth; the Orin table now mirrors it (mp_lon_anchor 0.95, bb_feat 0.98, hd_det_quality 0.98, mp_traj_cls 0.95; reg/instance_feature/map_* 0.99). Before editing either table, check the other.
+x86 ([tools/compare_npz_gates.py](../tools/compare_npz_gates.py) GATE_OVERRIDES) and Orin ([arm64/eval/eval_accuracy_orin.py](../arm64/eval/eval_accuracy_orin.py) GATES) drifted apart: the Orin table gated mp_lon_anchor at 0.99 (measured 0.9742 on pure FP16 - unmeetable), bb_feat at 0.9999 (INT8 backbone lands ~0.98 by design - unmeetable). Result: an INT8 run that is bit-consistent with x86 reported GATES PASS: False. The x86 table is the source of truth; the Orin table now mirrors it (mp_lon_anchor 0.95, bb_feat 0.98, hd_det_quality 0.98, mp_traj_cls 0.95; reg/instance_feature/map_* 0.99). Before editing either table, check the other.
 
 ## 7.18 Orin TRT version is load-bearing: 10.3 vs 10.4 on plugin graphs
 
-Paired same-session builds at MAXN (jetson_clocks pinned, identical flags, both run orders) showed the 10.4.0.26 tarball builds engines that are +24-55% slower GPU compute than the JetPack 10.3 for the three DeformableAggregationPlugin-bearing sub-models, while backbone (no plugin) is flat (+0.2%). Per-layer profiles locate it: the plugin kernel itself is bit-identical across versions; what regresses is the MatMul feeding each plugin, which 10.3 fuses into __myl_* groups and 10.4 emits standalone (a single 6.08 ms MatMul in motion_plan vs ~0.7 ms fused; layer counts 469->437, 859->823, 536->458). Six public knobs tested - builderOptimizationLevel 4/5, preview +aliasedPluginIO1003 on/off, a plugin rebuilt with 10.4 headers, --tacticSources=-cublasLt, --layerPrecisions + --precisionConstraints=obey - and none restores 10.3-level latency; on 10.4 the FP16 cascade engine-sum would be ~112 ms vs 86.8 on 10.3, past the 100 ms real-time budget. Rules: Orin stays on the JetPack-matched TRT and gets re-evaluated per JetPack bump; same-TRT-across-platforms is a non-goal (validated pairing: x86 10.4 / Orin 10.3, the regression is 10.4-on-sm_87-specific); the plugin .so does not need per-version rebuilds (bit-identical kernel cost under both versions). Side note: 10.4 folds the unfolded If subgraphs at build (one benign skipped tactic) but runs marginally slower than the folded _sim.onnx, so folding stays required on Orin either way. Full data, per-layer evidence, failed-fix table and repro commands: docs/trt_versions.md.
+Paired same-session builds at MAXN (jetson_clocks pinned, identical flags, both run orders) showed the 10.4.0.26 tarball builds engines that are +24-55% slower GPU compute than the JetPack 10.3 for the three DeformableAggregationPlugin-bearing sub-models, while backbone (no plugin) is flat (+0.2%). Per-layer profiles locate it: the plugin kernel itself is bit-identical across versions; what regresses is the MatMul feeding each plugin, which 10.3 fuses into __myl_* groups and 10.4 emits standalone (a single 6.08 ms MatMul in motion_plan vs ~0.7 ms fused; layer counts 469->437, 859->823, 536->458). Six public knobs tested - builderOptimizationLevel 4/5, preview +aliasedPluginIO1003 on/off, a plugin rebuilt with 10.4 headers, --tacticSources=-cublasLt, --layerPrecisions + --precisionConstraints=obey - and none restores 10.3-level latency; on 10.4 the FP16 cascade engine-sum would be ~112 ms vs 86.8 on 10.3, past the 100 ms real-time budget. Rules: Orin stays on the JetPack-matched TRT and gets re-evaluated per JetPack bump; same-TRT-across-platforms is a non-goal (validated pairing: x86 10.4 / Orin 10.3, the regression is 10.4-on-sm_87-specific); the plugin .so does not need per-version rebuilds (bit-identical kernel cost under both versions). Side note: 10.4 folds the unfolded If subgraphs at build (one benign skipped tactic) but runs marginally slower than the folded _sim.onnx, so folding stays required on Orin either way. Full data, per-layer evidence, failed-fix table and repro commands: [docs/trt_versions.md](trt_versions.md).

@@ -13,9 +13,9 @@ Per-engine trtexec GPU compute time (mean), paired builds in one session at MAXN
 | map_sim | 22.72 ms | 35.30 ms | +55% |
 | motion_plan_sim | 23.03 / 22.98 ms (2 builds) | 31.58 / 32.14 / 32.50 ms (3 builds) | +37-40% |
 
-End-to-end trtexec latency (includes H2D of fp32 inputs) tells the same story: backbone +0.3%, head +18%, map +41%, motion +23%. Throughput on motion_plan falls from 43.1 to 31.3 qps. Cascade engine-sum: 86.8 ms (10.3) vs 112.3 ms (10.4) - the 10.3 sum cross-checks against the published bench-harness MAXN number (86.2 ms, docs/engine_profiling.md 3.6), and the 10.4 sum would push the FP16 cascade past the 100 ms real-time budget. Engine sizes differ by less than 0.7% across versions: the gap is kernel choice, not memory footprint.
+End-to-end trtexec latency (includes H2D of fp32 inputs) tells the same story: backbone +0.3%, head +18%, map +41%, motion +23%. Throughput on motion_plan falls from 43.1 to 31.3 qps. Cascade engine-sum: 86.8 ms (10.3) vs 112.3 ms (10.4) - the 10.3 sum cross-checks against the published bench-harness MAXN number (86.2 ms, [docs/engine_profiling.md](engine_profiling.md) 3.6), and the 10.4 sum would push the FP16 cascade past the 100 ms real-time budget. Engine sizes differ by less than 0.7% across versions: the gap is kernel choice, not memory footprint.
 
-These trtexec numbers are within-harness only: they are not comparable to the bench_engines.py figures elsewhere in docs (different harness, fp16 vs fp32 input feeds). Every statement in this doc compares like with like.
+These trtexec numbers are within-harness only: they are not comparable to the [arm64/eval/bench_engines.py](../arm64/eval/bench_engines.py) figures elsewhere in docs (different harness, fp16 vs fp32 input feeds). Every statement in this doc compares like with like.
 
 ## 8.2 Methodology
 
@@ -51,7 +51,7 @@ The layerPrecisions result is the informative one: the regressed MatMuls are not
 
 ## 8.5 Interplay with If-folding (_sim.onnx)
 
-TRT 10.3 rejects the unfolded ONNX at parse (IIfConditionalOutputLayer shape conflict, docs/lessons.md 7.16). TRT 10.4 folds the If subgraphs at build: the unfolded sparsedrive_motion_plan.onnx compiles fine, with one benign skipped tactic (traj_cls f16 vs f32) and 33.07 ms GPU compute - marginally slower than the folded 31.6-32.1 ms. So 10.4 would remove the parse blocker, but on Orin the _sim.onnx folding remains required anyway (10.3 needs it) and stays marginally faster on 10.4.
+TRT 10.3 rejects the unfolded ONNX at parse (IIfConditionalOutputLayer shape conflict, [docs/lessons.md](lessons.md) 7.16). TRT 10.4 folds the If subgraphs at build: the unfolded sparsedrive_motion_plan.onnx compiles fine, with one benign skipped tactic (traj_cls f16 vs f32) and 33.07 ms GPU compute - marginally slower than the folded 31.6-32.1 ms. So 10.4 would remove the parse blocker, but on Orin the _sim.onnx folding remains required anyway (10.3 needs it) and stays marginally faster on 10.4.
 
 ## 8.6 Conclusions
 

@@ -20,9 +20,9 @@
 
 ## 4.3 Real-time capable variant
 
-The deployed Small variant reaches p50 16.15 ms on RTX 4090 Laptop (§3.2). On Orin (MAXN, the reporting standard) the FP16 cascade is 86.2 ms - inside the 100 ms (10 Hz) budget; capped modes fall below real-time (docs/power_modes.md §5.3). Measure with `arm64/eval/bench_engines.py` under each power mode (docs/power_modes.md).
+The deployed Small variant reaches p50 16.15 ms on RTX 4090 Laptop (§3.2). On Orin (MAXN, the reporting standard) the FP16 cascade is 86.2 ms - inside the 100 ms (10 Hz) budget; capped modes fall below real-time ([docs/power_modes.md](power_modes.md) §5.3). Measure with [arm64/eval/bench_engines.py](../arm64/eval/bench_engines.py) under each power mode ([docs/power_modes.md](power_modes.md)).
 
-## 4.4 Weight and ONNX links (policy per ckpts/README.md)
+## 4.4 Weight and ONNX links (policy per [ckpts/README.md](../ckpts/README.md))
 
 - SparseDriveV2-Small stage2 checkpoint: download from [wenchaosun/SparseDriveV2 on Hugging Face](https://huggingface.co/wenchaosun/SparseDriveV2). Weights are link-only: rehosting upstream weights on our own HuggingFace - including any retrained/QAT variant derived from them - is prohibited (copyright).
 - The four deployment ONNX exported by this pipeline are published at [hous-lab/sparsedrive-trt-edge on Hugging Face](https://huggingface.co/hous-lab/sparsedrive-trt-edge) - these are our own export artifacts and are redistributed there (provenance in the HF model card).
@@ -38,7 +38,7 @@ The default deployment tier is FP16 for all four engines. An optional INT8 tier 
 | map | FP16 | shares the same feature inputs; kept FP16 to cap accuracy risk |
 | motion_plan | FP16 | argmax/selection-heavy; lon_anchor is already at the WARN edge in FP16 (§7.6) |
 
-Calibration uses entropy calibrator v2 over 64 real val frames stored as stacked float16 npz (`x86/trt_compile/int8/calib_data/*.npz`; the calibrators cast back to float32 per batch). `tools/gen_calib_backbone.py` saves raw `[64,6,3,384,704]` images; `tools/gen_calib_head.py` saves `feat_0..3 [64,6,256,h,w]` + projection_mat/image_wh. The motion engine has no INT8 calib data in this tier.
+Calibration uses entropy calibrator v2 over 64 real val frames stored as stacked float16 npz (`x86/trt_compile/int8/calib_data/*.npz`; the calibrators cast back to float32 per batch). [tools/gen_calib_backbone.py](../tools/gen_calib_backbone.py) saves raw `[64,6,3,384,704]` images; [tools/gen_calib_head.py](../tools/gen_calib_head.py) saves `feat_0..3 [64,6,256,h,w]` + projection_mat/image_wh. The motion engine has no INT8 calib data in this tier.
 
 **x86 results (RTX 4090 Laptop, TRT 10.4):**
 
@@ -60,11 +60,11 @@ Cascade gates (INT8 cascade vs PT reference, all PASS): bb_feat 0.981-0.989, hd_
 
 Same conclusion as x86: INT8 backbone is the only lever (1.96x at MAXN; cascade 86.2 -> 75.4 ms, ~12%). Under the capped 30W mode the same tier moves BB 66.5 -> 39.4 ms (1.69x), cascade 271.1 -> 244.0 ms (~10%) - backbone INT8 lifts every power mode, head INT8 quantizes MatMuls around the FP16 deformable plugin and does not move the critical path on any mode.
 
-Cascade gates vs the x86 FP16 reference, three configs (all PASS; gates bb_feat 0.98 / hd_det_quality 0.98 / motion 0.95 - see docs/lessons.md 7.17):
+Cascade gates vs the x86 FP16 reference, three configs (all PASS; gates bb_feat 0.98 / hd_det_quality 0.98 / motion 0.95 - see [docs/lessons.md](lessons.md) 7.17):
 | Config | bb_feat | hd_det_quality | mp_motion_traj | mp_lon_anchor |
 |---|---|---|---|---|
 | All FP16 | 0.9999+ | 0.999896 | 0.997095 | 0.974231 (x86: 0.9742) |
 | BB INT8 | 0.981-0.989 | 0.986335 | 0.961489 | 0.963534 |
 | BB+Head INT8 | 0.981-0.989 | 0.986270 | 0.961453 | 0.963534 |
 
-Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 on both platforms, mp_lon_anchor 0.9635 Orin vs 0.9589 x86) - the INT8 tier is cross-platform reproducible. Full per-tensor tables: `arm64/eval/results/accuracy_comparison.json`; raw bench rows: `arm64/eval/results/maxn_int8/bench_results.json` (MAXN standard) and `arm64/eval/results/int8/bench_results.json` (30W reference).
+Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 on both platforms, mp_lon_anchor 0.9635 Orin vs 0.9589 x86) - the INT8 tier is cross-platform reproducible. Full per-tensor tables: [arm64/eval/results/accuracy_comparison.json](../arm64/eval/results/accuracy_comparison.json); raw bench rows: [arm64/eval/results/maxn_int8/bench_results.json](../arm64/eval/results/maxn_int8/bench_results.json) (MAXN standard) and [arm64/eval/results/int8/bench_results.json](../arm64/eval/results/int8/bench_results.json) (30W reference).

@@ -11,7 +11,7 @@ End-to-end TensorRT deployment of [SparseDriveV2](https://github.com/swc-17/Spar
 | Orin MAXN | FP16 | 22.1 | 17.3 | 26.1 | 20.7 | **86.2 ms** |
 | Orin MAXN | INT8 | **11.3** | 17.4 | 26.1 | 20.7 | 75.5 ms |
 
-> Per-engine and cascade latency (200-iter mean per engine, `bench_engines.py`)
+> Per-engine and cascade latency (200-iter mean per engine, [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py))
 > The x86 p50/p90 (16.15/16.52 ms) are a separate 50-iter p50 measurement on the FP16 chain.
 
 - Backbone INT8 is the only lever on both platforms: 2.1x on x86 (cascade 21.1 -> 18.2 ms) and 1.96x on Orin MAXN (cascade 86.2 -> 75.4 ms, ~12%). 
@@ -19,7 +19,7 @@ End-to-end TensorRT deployment of [SparseDriveV2](https://github.com/swc-17/Spar
 
 ### Accuracy
 
-Cosine similarity, engine cascade vs PyTorch reference, single real demo frame (gates per docs/lessons.md §7.17):
+Cosine similarity, engine cascade vs PyTorch reference, single real demo frame (gates per [docs/lessons.md](docs/lessons.md) §7.17):
 
 | Output | x86 FP16 | x86 INT8 | Orin FP16 | Orin INT8 |
 |---|---|---|---|---|
@@ -33,7 +33,7 @@ Cosine similarity, engine cascade vs PyTorch reference, single real demo frame (
 | mp_lat_anchor | 0.9991 | 0.9982 | 0.9988 | 0.9979 |
 | mp_lon_anchor | 0.9742 (WARN) | 0.9589 | 0.9742 | 0.9635 |
 
-The Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 on both platforms; mp_lon_anchor 0.9635 Orin vs 0.9589 x86) - the INT8 tier is cross-platform reproducible. Full per-tensor tables: `arm64/eval/results/accuracy_comparison.json` (Orin, three configs) and `x86/eval/results/int8_vs_fp16_gates.json` (x86). The lon_anchor WARN reflects argmax-sensitive velocity-profile selection near ties under reduced precision (docs/lessons.md §7.6), not a deployment defect.
+The Orin INT8 degradation is bit-consistent with x86 INT8 (bb_feat 0.981-0.989 on both platforms; mp_lon_anchor 0.9635 Orin vs 0.9589 x86) - the INT8 tier is cross-platform reproducible. Full per-tensor tables: [arm64/eval/results/accuracy_comparison.json](arm64/eval/results/accuracy_comparison.json) (Orin, three configs) and [x86/eval/results/int8_vs_fp16_gates.json](x86/eval/results/int8_vs_fp16_gates.json) (x86). The lon_anchor WARN reflects argmax-sensitive velocity-profile selection near ties under reduced precision ([docs/lessons.md](docs/lessons.md) §7.6), not a deployment defect.
 
 ## Get started
 
@@ -43,11 +43,11 @@ The conda environment is built exactly as the upstream training repo instructs -
 
 ### 2. Weights, ONNX, and data inputs
 
-- Download the upstream files - the SparseDriveV2-Small stage2 checkpoint **and the six anchor npy/npz files** - per the download table in [ckpts/README.md](ckpts/README.md) (upstream files are linked, never redistributed; anchors go to `configs/anchors/`, weights to `ckpts/`). 
+- Download the upstream files - the SparseDriveV2-Small stage2 checkpoint **and the six anchor npy/npz files** - per the download table in [ckpts/README.md](ckpts/README.md) (upstream files are linked, never redistributed; anchors go to [configs/anchors/](configs/anchors/), weights to [ckpts/](ckpts/)). 
 - To skip the ONNX-export step, the four deployment ONNX are published at [hous-lab/sparsedrive-trt-edge on Hugging Face](https://huggingface.co/hous-lab/sparsedrive-trt-edge)
     - place them under `onnx_export/output/` and continue from the engine-build step (the HF repo hosts only our own export artifacts; weights stay upstream-link-only). 
-- The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split, and `run_pipeline.sh` step 5 generates demo npz from them. 
-- Set the env vars in `run_pipeline.sh` (SD_CKPT, dataset roots) if your paths differ.
+- The demo inputs (3 val frames used for demo data + calibration + reference) come from the Bench2Drive val split, and [run_pipeline.sh](run_pipeline.sh) step 5 generates demo npz from them. 
+- Set the env vars in [run_pipeline.sh](run_pipeline.sh) (SD_CKPT, dataset roots) if your paths differ.
 
 ### 3. x86 pipeline
 
@@ -68,7 +68,7 @@ bash scripts/sync_to_orin.sh
 bash scripts/run_orin_pipeline.sh   # 5 steps; SD_BUILD_INT8=1 adds the INT8 tier
 ```
 
-Accuracy on Orin is engine-vs-engine against the x86 reference (the training env is impractical on the device): `arm64/eval/eval_accuracy_orin.py` compares all four engines against `data/x86_reference.npz` with cosine/MSE gates. Latency/power: `arm64/eval/bench_engines.py` (per-engine, any power mode) and `arm64/eval/run_power_modes.sh` (per-mode sweep with tegrastats).
+Accuracy on Orin is engine-vs-engine against the x86 reference (the training env is impractical on the device): [arm64/eval/eval_accuracy_orin.py](arm64/eval/eval_accuracy_orin.py) compares all four engines against `data/x86_reference.npz` with cosine/MSE gates. Latency/power: [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py) (per-engine, any power mode) and [arm64/eval/run_power_modes.sh](arm64/eval/run_power_modes.sh) (per-mode sweep with tegrastats).
 
 ## Hardware platforms
 
@@ -79,7 +79,7 @@ Accuracy on Orin is engine-vs-engine against the x86 reference (the training env
 | SoC | AGX Orin 64 GB, Ampere GPU (**sm_87**), 2048 CUDA cores |
 | Memory | 64 GB LPDDR5, 204.8 GB/s |
 | Power modes | MAXN / 50 W / 30 W / 15 W (see [docs/power_modes.md](docs/power_modes.md)) |
-| TensorRT | 10.3 (JetPack, dpkg layout; 10.4 is measurably slower on this SoC, see docs/trt_versions.md) |
+| TensorRT | 10.3 (JetPack, dpkg layout; 10.4 is measurably slower on this SoC, see [docs/trt_versions.md](docs/trt_versions.md)) |
 | OS | JetPack 6.2.2, L4T 36.5.0, Linux aarch64 |
 
 ### x86_64 workstation - RTX 4090 Laptop GPU
