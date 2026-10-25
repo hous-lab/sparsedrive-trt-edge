@@ -197,6 +197,17 @@ def compare_config(config_name, bb_path, head_path, map_path, motion_path, ref):
     return results, all_pass
 
 
+def _sanitize(obj):
+    """Record paths repo-relative so committed results carry no host paths."""
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    if isinstance(obj, str) and obj.startswith(REPO + '/'):
+        return os.path.relpath(obj, REPO)
+    return obj
+
+
 if __name__ == "__main__":
     ref = np.load(REF)
     configs = [
@@ -232,7 +243,7 @@ if __name__ == "__main__":
     out_path = os.path.join(REPO, "arm64/eval/results/accuracy_comparison.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
-        json.dump({"reference": REF, "configs": all_results,
-                   "gates_pass": overall}, f, indent=2)
+        json.dump(_sanitize({"reference": REF, "configs": all_results,
+                         "gates_pass": overall}), f, indent=2)
     print('\nSaved: %s' % out_path)
     print('GATES PASS: %s' % overall)

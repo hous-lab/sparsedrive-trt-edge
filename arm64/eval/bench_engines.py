@@ -37,6 +37,17 @@ def load_engine(path, plugin=None):
         return trt.Runtime(TRT_LOGGER).deserialize_cuda_engine(f.read())
 
 
+def _sanitize(obj):
+    """Record paths repo-relative so committed results carry no host paths."""
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    if isinstance(obj, str) and obj.startswith(REPO + '/'):
+        return os.path.relpath(obj, REPO)
+    return obj
+
+
 def bench(eng, feeds, x86=0, warmup_sec=3, iters=200):
     ctx = eng.create_execution_context()
     if ctx is None:
@@ -170,7 +181,7 @@ def main():
     out = os.path.join(OUT_DIR, "bench_results.json")
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(out, "w") as f:
-        json.dump({"engines": results, "missing": missing, "failed": failed}, f, indent=2)
+        json.dump(_sanitize({"engines": results, "missing": missing, "failed": failed}), f, indent=2)
     print(f"Saved: {out}")
 
 

@@ -1,6 +1,6 @@
 {
-  "demo": "/home/hous/Projects/_hot/e2e/SparseDriveV2/sparsedrive_deploy_pipeline/sparsedrive-trt-edge/data/demo_data/sample0.npz",
-  "reference": "/home/hous/Projects/_hot/e2e/SparseDriveV2/sparsedrive_deploy_pipeline/sparsedrive-trt-edge/data/x86_reference.npz",
+  "demo": "data/demo_data/sample0.npz",
+  "reference": "data/x86_reference.npz",
   "results": {
     "mp_motion_cls": {
       "cos_sim": 0.9964855867804692,

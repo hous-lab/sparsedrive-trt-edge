@@ -38,6 +38,17 @@ def mse_v(a, b):
     return float(((a - b) ** 2).mean())
 
 
+def _sanitize(obj):
+    """Record paths repo-relative so committed results carry no host paths."""
+    if isinstance(obj, dict):
+        return {k: _sanitize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize(v) for v in obj]
+    if isinstance(obj, str) and obj.startswith(REPO + '/'):
+        return os.path.relpath(obj, REPO)
+    return obj
+
+
 def main():
     demo = np.load(DEMO)
     ref = np.load(REF)
@@ -63,8 +74,8 @@ def main():
     out = os.path.join(REPO, 'x86/eval/results/motion_v2_gate.json')
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, 'w') as f:
-        json.dump({'demo': DEMO, 'reference': REF, 'results': results,
-                   'gates_pass': ok}, f, indent=2)
+        json.dump(_sanitize({'demo': DEMO, 'reference': REF, 'results': results,
+                         'gates_pass': ok}), f, indent=2)
     print('Saved: ' + out)
     print('GATES PASS: %s' % ok)
 

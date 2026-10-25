@@ -1,13 +1,13 @@
 {
-  "reference": "/home/hous/sparsedrive-trt-edge/data/x86_reference.npz",
+  "reference": "data/x86_reference.npz",
   "configs": {
     "fp16": {
       "config": "Config 1: All FP16",
       "engines": {
-        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/backbone_fp16.engine",
-        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/head_fp16.engine",
-        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
-        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+        "backbone": "arm64/trt_compile/fp16/output/backbone_fp16.engine",
+        "head": "arm64/trt_compile/fp16/output/head_fp16.engine",
+        "map": "arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
       },
       "results": {
         "bb_feat_0": {
@@ -112,10 +112,10 @@
     "bb_int8": {
       "config": "Config 2: BB INT8 + rest FP16",
       "engines": {
-        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine",
-        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/head_fp16.engine",
-        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
-        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+        "backbone": "arm64/trt_compile/int8/output/backbone_int8.engine",
+        "head": "arm64/trt_compile/fp16/output/head_fp16.engine",
+        "map": "arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
       },
       "results": {
         "bb_feat_0": {
@@ -220,10 +220,10 @@
     "bb_head_int8": {
       "config": "Config 3: BB+Head INT8 + rest FP16",
       "engines": {
-        "backbone": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine",
-        "head": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/head_int8.engine",
-        "map": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/map_fp16.engine",
-        "motion_plan": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
+        "backbone": "arm64/trt_compile/int8/output/backbone_int8.engine",
+        "head": "arm64/trt_compile/int8/output/head_int8.engine",
+        "map": "arm64/trt_compile/fp16/output/map_fp16.engine",
+        "motion_plan": "arm64/trt_compile/fp16/output/motion_plan_fp16.engine"
       },
       "results": {
         "bb_feat_0": {

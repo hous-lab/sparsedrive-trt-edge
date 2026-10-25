@@ -24,7 +24,7 @@
   "missing": [
     {
       "name": "BB_INT8",
-      "path": "/home/hous/sparsedrive-trt-edge/arm64/trt_compile/int8/output/backbone_int8.engine"
+      "path": "arm64/trt_compile/int8/output/backbone_int8.engine"
     }
   ]
 }
