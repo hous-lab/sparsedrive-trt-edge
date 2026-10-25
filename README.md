@@ -2,6 +2,8 @@
 
 End-to-end TensorRT deployment of [SparseDriveV2](https://github.com/swc-17/SparseDriveV2/tree/bench2drive) (3D detection + mapping + motion prediction & planning) on NVIDIA Jetson AGX Orin (`sm_87`) and an x86_64 dev host (RTX 4090 Laptop, `sm_89`).
 
+Status: Stable - results last verified on Jetson AGX Orin 64 GB (JetPack 6.2.2, L4T 36.5.0, TRT 10.3) and RTX 4090 Laptop (Ubuntu 22.04, CUDA 11.8, TRT 10.4.0.26), see [docs/environment.md](docs/environment.md) and [docs/trt_versions.md](docs/trt_versions.md). Issues and PRs welcome.
+
 ## Latency on Jetson Orin and 4090 Laptop
 
 | Platform | Config | BB | Head | Map | Motion | Cascade |
@@ -11,7 +13,7 @@ End-to-end TensorRT deployment of [SparseDriveV2](https://github.com/swc-17/Spar
 | Orin MAXN | FP16 | 22.1 | 17.3 | 26.1 | 20.7 | **86.2 ms** |
 | Orin MAXN | INT8 | **11.3** | 17.4 | 26.1 | 20.7 | 75.5 ms |
 
-> Per-engine and cascade latency (200-iter mean per engine, [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py))
+> Per-engine and cascade latency (3 s warmup, 200-iter mean per engine, [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py))
 > The x86 p50/p90 (16.15/16.52 ms) are a separate 50-iter p50 measurement on the FP16 chain.
 
 - Backbone INT8 is the only lever on both platforms: 2.1x on x86 (cascade 21.1 -> 18.2 ms) and 1.96x on Orin MAXN (cascade 86.2 -> 75.4 ms, ~12%). 
@@ -68,7 +70,7 @@ bash scripts/sync_to_orin.sh
 bash scripts/run_orin_pipeline.sh   # 5 steps; SD_BUILD_INT8=1 adds the INT8 tier
 ```
 
-Accuracy on Orin is engine-vs-engine against the x86 reference (the training env is impractical on the device): [arm64/eval/eval_accuracy_orin.py](arm64/eval/eval_accuracy_orin.py) compares all four engines against `data/x86_reference.npz` with cosine/MSE gates. Latency/power: [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py) (per-engine, any power mode) and [arm64/eval/run_power_modes.sh](arm64/eval/run_power_modes.sh) (per-mode sweep with tegrastats).
+Accuracy on Orin is engine-vs-engine against the x86 reference (the training env is impractical on the device): [arm64/eval/eval_accuracy_orin.py](arm64/eval/eval_accuracy_orin.py) compares all four engines against `data/x86_reference.npz` with cosine/MSE gates. No on-device PyTorch latency baseline is reported for the same reason; the latency comparison is between engine tiers (FP16 vs INT8). Latency/power: [arm64/eval/bench_engines.py](arm64/eval/bench_engines.py) (per-engine, any power mode) and [arm64/eval/run_power_modes.sh](arm64/eval/run_power_modes.sh) (per-mode sweep with tegrastats).
 
 ## Hardware platforms
 

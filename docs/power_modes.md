@@ -26,7 +26,7 @@ On our box, runtime `nvpmodel -m` refuses while a CUDA golden context exists and
 
 ## 5.3 Results table (fill on device)
 
-Per-engine latency from [arm64/eval/bench_engines.py](../arm64/eval/bench_engines.py) (200-iter mean per engine):
+Per-engine latency from [arm64/eval/bench_engines.py](../arm64/eval/bench_engines.py) (3 s warmup, 200-iter mean per engine):
 
 | Mode | BB | Head | Map | Motion | Sum | VDD_GPU_SOC (C1) |
 |---|---|---|---|---|---|---|
